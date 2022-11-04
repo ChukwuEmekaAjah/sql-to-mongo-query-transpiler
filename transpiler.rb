@@ -37,11 +37,12 @@ end
 # p = Transpiler.new("select * from Customers where Country='Mexico';").transpile
 # p2 = Transpiler.new("select name, age from Customers where Country='Mexico';").transpile
 # p2 = Transpiler.new("explain select name, age from Customers where Country='Mexico';").transpile
+# t = Transpiler.new("select name as lname, age from Customers where Country='Mexico';")
 
 # puts p2.print
 # puts p.print
 
-t = Transpiler.new("select name, age from Customers where Country='Mexico';")
+t = Transpiler.new("select name as lname, age as number from Customers where Country='Mexico';")
 p = t.parse.transpile
 puts "SQL Query is: \"#{t.statement}\""
 puts "MongoDB equivalent query is: '#{p}'"
