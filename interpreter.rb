@@ -9,6 +9,7 @@ class Interpreter
 
 
     VISITORS = {
+        "ExplainDML" => :visitExplainDML,
         "SelectDML" => :visitSelectDML,
         "UpdateDML" => :visitUpdateDML,
         "DeleteDML" => :visitDeleteDML,
@@ -30,6 +31,11 @@ class Interpreter
 
     def visitFieldExpr(expr)
         return expr.value
+    end
+
+    def visitExplainDML(dml)
+        query = execute(dml.statement)
+        query += '.explain()'
     end
 
     def visitSelectDML(dml)

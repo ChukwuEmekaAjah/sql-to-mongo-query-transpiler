@@ -47,6 +47,18 @@ class DeleteDML < DML
     end
 end
 
+class ExplainDML < DML
+    attr_reader :statement
+
+    def initialize(statement)
+        @statement = statement
+    end
+
+    def print
+        puts "<ExplainDML @statement = #{@statement}>"
+    end
+end
+
 class UpdateDML < DML
     attr_reader :command, :object_name, :conditions, :assignments
     def initialize(command, object_name, assignments, conditions)

@@ -13,10 +13,16 @@ class Transpiler
 
     def rescan
         @tokens = Scanner.new(@statement).scan_tokens
+        self
+    end
+
+    def parse
+        @parsed_statement = Parser.new(@tokens).parse
+        self
     end
 
     def transpile
-        @parsed_statement = Parser.new(@tokens).parse
+        raise StandardError, "Please first parse statement before transpiling" unless @parsed_statement
         @interpreter.interpret(@parsed_statement)
     end
 
@@ -34,7 +40,7 @@ end
 # puts p2.print
 # puts p.print
 
-t = Transpiler.new("select name, age from Customers where Country='Mexico';")
-p = t.transpile
+t = Transpiler.new("explain update Customers set ContactName='Juan', age=23 where Country='Mexico';")
+p = t.parse.transpile
 puts "SQL Query is: \"#{t.statement}\""
 puts "MongoDB equivalent query is: '#{p}'"

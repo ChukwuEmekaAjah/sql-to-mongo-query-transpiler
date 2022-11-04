@@ -36,8 +36,15 @@ class Parser
     end
 
     def statement
+        return explain_statement if string_match('explain')
         return data_manipulation_statement if string_match(*DML_KEYWORDS.keys.map {|key| key.downcase})
         return data_definition_statement
+    end
+
+    def explain_statement
+        advance
+        dml_statement = data_manipulation_statement
+        return ExplainDML.new(dml_statement)
     end
 
     def data_definition_statement
@@ -242,7 +249,7 @@ class Parser
     def logical_or
         expr = logic_and
 
-        if string_match( "or")
+        while string_match( "or")
             operator = previous
             right = logic_and
             expr = Logical.new(expr, operator, right)
@@ -253,7 +260,7 @@ class Parser
     def logic_and
         expr = equality
 
-        if string_match("and")
+        while string_match("and")
             operator = previous
             right = equality
             expr = Logical.new(expr, operator, right)
@@ -264,7 +271,7 @@ class Parser
     def equality
         expr = comparison
 
-        if match(:EQUAL, :BANG_EQUAL)
+        while match(:EQUAL, :BANG_EQUAL)
             operator = previous
             right = comparison
             expr = Binary.new(expr, operator, right)
@@ -275,7 +282,7 @@ class Parser
     def comparison
         expr = term
 
-        if match(:GREATER, :GREATER_EQUAL, :LESS, :LESS_EQUAL)
+        while match(:GREATER, :GREATER_EQUAL, :LESS, :LESS_EQUAL)
             operator = previous
             right = term
             expr = Binary.new(expr, operator, right)
@@ -286,7 +293,7 @@ class Parser
     def term
         expr = factor
 
-        if match(:PLUS, :MINUS)
+        while match(:PLUS, :MINUS)
             operator = previous
             right = factor
             expr = Binary.new(expr, operator, right)
@@ -297,7 +304,7 @@ class Parser
     def factor
         expr = unary
 
-        if match(:STAR, :SLASH)
+        while match(:STAR, :SLASH)
             operator = previous
             right = unary
             expr = Binary.new(expr, operator, right)
@@ -306,7 +313,7 @@ class Parser
     end
 
     def unary
-        if match(:BANG, :MINUS)
+        while match(:BANG, :MINUS)
             operator = previous
             right = unary
             return Unary.new(operator, right)
@@ -330,8 +337,6 @@ class Parser
             consume(:RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping.new(expr)
         end
-
-        return expression
     end
 
     def match(*types)
@@ -374,7 +379,6 @@ class Parser
 
     def consume(type, message)
         return advance if check(type)
-        
         raise StandardError, message + " but got #{previous&.literal || previous&.value || previous&.lexeme}"
     end
   
