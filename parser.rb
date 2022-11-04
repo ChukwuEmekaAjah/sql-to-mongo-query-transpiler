@@ -73,7 +73,13 @@ class Parser
             advance
         else
             while match(:PARAM, :IDENTIFIER)
-                selected_fields << previous
+                selected_field = previous
+
+                if peek.literal == 'as' && ([:PARAM, :IDENTIFIER].include? peek(1).type)
+                    selected_field = ProjectedField.new(previous, peek(1))
+                    1.upto(2) {|_| advance}
+                end
+                selected_fields << selected_field
                 if peek.literal != 'from'
                     consume(:COMMA, "Expected ',' after each value in insert statement") unless is_at_end?
                 end

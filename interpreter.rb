@@ -1,4 +1,5 @@
 require 'json'
+require './expr'
 
 class Interpreter
     
@@ -20,6 +21,7 @@ class Interpreter
         "Unary" => :visitUnaryExpr,
         "Field" => :visitFieldExpr,
         "Logical" => :visitLogicalExpr,
+        "ProjectedField" => :visitProjectedFieldExpr,
     }
 
     def visitLogicalExpr(expr)
@@ -27,6 +29,10 @@ class Interpreter
         right = execute(expr.right)
 
         return {"$#{expr.operator.literal}": [left, right]}
+    end
+
+    def visitProjectedFieldExpr(expr)
+        {expr.alias_name.literal => "$#{expr.original_name.literal}"}
     end
 
     def visitFieldExpr(expr)
@@ -42,7 +48,6 @@ class Interpreter
         query = 'db.'
         collection = dml.object_name.lexeme
         query += collection
-        query += '.find'
 
         conditions = {}
         if dml.conditions
@@ -50,11 +55,30 @@ class Interpreter
         end
 
         selected_fields = {}
+        query_type = '.find'
         dml.selected_fields.each do |field|
-            selected_fields[field.literal] = 1
+            if field.is_a?(ProjectedField)
+                selected_fields.merge!(execute(field))
+                query_type = '.aggregate'
+                next
+            end
+            selected_fields.merge!({field.literal => 1 })
         end
 
-        query += "(#{JSON.generate(conditions)}, #{JSON.generate(selected_fields)})"
+        if query_type == '.aggregate'
+            puts "got in here"
+            aggregate_body = [
+                {
+                    "$match": conditions
+                },
+                {
+                    "$project": selected_fields
+                }
+            ]
+            query += "#{query_type}(#{JSON.generate(aggregate_body)})"
+            return query
+        end
+        query += "#{query_type}(#{JSON.generate(conditions)}, #{JSON.generate(selected_fields)})"
     end
 
     def visitUpdateDML(dml)

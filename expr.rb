@@ -159,3 +159,12 @@ class Grouping < Expr
     end
 end
 
+class ProjectedField < Expr
+    attr_reader :original_name, :alias_name
+
+    def initialize(original_name, alias_name)
+        @original_name = original_name
+        @alias_name = alias_name
+    end
+
+end
