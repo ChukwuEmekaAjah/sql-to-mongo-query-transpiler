@@ -26,7 +26,10 @@ class DML
     end
 
     def to_s
-        self.class.to_s
+        attributes = instance_variables.map do |atr|
+            "#{atr}=#{instance_variable_get(atr)}"
+        end
+        "<#{self.class.to_s} #{attributes.join(' ')} >"
     end
 
     def accept(visitor)
@@ -41,10 +44,6 @@ class DeleteDML < DML
         @object_name = object_name
         @conditions = conditions
     end
-
-    def print
-        puts "<DeleteDML @command= #{@command} @object_name= #{@object_name} @conditions= #{@conditions}>"
-    end
 end
 
 class ExplainDML < DML
@@ -52,10 +51,6 @@ class ExplainDML < DML
 
     def initialize(statement)
         @statement = statement
-    end
-
-    def print
-        puts "<ExplainDML @statement = #{@statement}>"
     end
 end
 
@@ -67,17 +62,6 @@ class UpdateDML < DML
         @conditions = conditions
         @assignments = assignments
     end
-
-    def to_s
-        attributes = instance_variables.map do |atr|
-            "@#{atr}=#{instance_variable_get(atr)}"
-        end
-        "<#{self.class.to_s} #{attributes.join(' ')} >"
-    end
-
-    def print
-        puts "<UpdateDML @assignments = #{@assignments} @command= #{@command} @object_name= #{@object_name} @conditions= #{@conditions}>"
-    end
 end
 
 class SelectDML < DML
@@ -87,10 +71,6 @@ class SelectDML < DML
         @object_name = object_name
         @conditions = conditions
         @selected_fields = selected_fields
-    end
-
-    def print
-        puts "<SelectDML @selected_fields = #{@selected_fields} @command= #{@command} @object_name= #{@object_name} @conditions= #{@conditions}>"
     end
 end
 
@@ -102,23 +82,19 @@ class InsertDML < DML
         @values = values
         @assignments = assignments
     end
-
-    def print
-        puts "<InsertDML @assignments = #{@assignments} @command= #{@command} @object_name= #{@object_name} @values= #{@values}>"
-    end
 end
 
 class Expr
+
+    def accept(visitor)
+        visitor.call(self)
+    end
 
     def to_s
         attributes = instance_variables.map do |atr|
             "#{atr}=#{instance_variable_get(atr)}"
         end
         "<#{self.class.to_s} #{attributes.join(' ')} >"
-    end
-
-    def accept(visitor)
-        visitor.call(self)
     end
 end
 
@@ -176,5 +152,4 @@ class ProjectedField < Expr
         @original_name = original_name
         @alias_name = alias_name
     end
-
 end

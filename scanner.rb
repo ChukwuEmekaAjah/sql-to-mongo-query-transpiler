@@ -33,7 +33,7 @@ class Scanner
                 @tokens << Token.new(';', :SEMICOLON, nil, @current)
             when '|'
                 if peek == '|'
-                    @tokens << Token.new('or', :KEYWORD, 'and', @current)
+                    @tokens << Token.new('or', :KEYWORD, 'or', @current)
                 end
             when '&'
                 if peek == '&'

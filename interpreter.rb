@@ -3,12 +3,6 @@ require './expr'
 
 class Interpreter
     
-    def clean_chars(string, char, replacement = '')
-        string.gsub(char, replacement)
-    end
-
-
-
     VISITORS = {
         "ExplainDML" => :visitExplainDML,
         "SelectDML" => :visitSelectDML,
@@ -28,7 +22,7 @@ class Interpreter
         left = execute(expr.left)
         right = execute(expr.right)
 
-        return {"$#{expr.operator.literal}": [left, right]}
+        return {"$#{expr.operator.literal}": [left, right].compact}
     end
 
     def visitProjectedFieldExpr(expr)
@@ -168,10 +162,6 @@ class Interpreter
         execute(expr.expression)
     end
 
-    def execute(expr)
-      expr.accept(method(VISITORS[expr.to_s]))
-    end
-
     def visitBinaryExpr(expr)
         left = execute(expr.left)
         right = execute(expr.right)
@@ -228,6 +218,7 @@ class Interpreter
     end
 
     def execute(statement)
-        statement.accept(method(VISITORS[statement.name]))
+        return nil if statement.nil?
+        statement.accept(method(VISITORS[statement.class.to_s]))
     end
 end

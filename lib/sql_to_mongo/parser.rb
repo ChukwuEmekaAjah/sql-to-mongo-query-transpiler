@@ -1,4 +1,5 @@
-require './expr'
+require_relative './expr'
+require_relative './errors'
 
 class Parser
     
@@ -7,23 +8,6 @@ class Parser
         @current = 0
     end
 
-    
-#     // query => statement+;
-# // statement => dataManipulationStatement | dataDefinitionStatement 
-# // dataManipulationStatement => selectStatement | updateStatement | insertStatement | deleteStatement
-# // dataDefinitionStatement => keyword* identifier (conditional)*
-# // selectStatement => keyword expression keyword identifier (conditional)*
-# // updateStatement => keyword identifier keyword expression (conditional)*
-# // insertStatement => keyword* identifier keyword expression
-# // deleteStatement => keyword identifier (conditional)*
-# // conditional => keyword expression
-    # grammar for sql
-    # statement => keyword (expression)* keyword* expression* (keyword expression)*
-    # expression => identifier | equality
-    # p = Scanner.new("select 'name', 'age', 'id' from 'ajah' where \"age\" = 3 and 'count' <= 23")
-# p = Scanner.new("delete * from 'ajah' where \"age\" = 3")
-# p = Scanner.new("drop database 'chuks'")
-# p = Scanner.new("update 'chuks' set 'name'=\"chuks\", 'age'=23 where age > 24")
     DML_KEYWORDS = {
         "SELECT" => true,
         "INSERT" => true,
@@ -63,7 +47,10 @@ class Parser
         return insert_statement if command.lexeme == 'insert'
         return delete_statement if command.lexeme == 'delete'
 
-        raise StandardError, "Command #{command.lexeme} at position #{command.line_position} is not supported"
+        raise SQLToMongo::Errors::ParserError.new(
+            "Command #{command.lexeme} at position #{command.line_position} is not supported",
+            command
+        )
     end
 
     def select_statement
@@ -88,7 +75,10 @@ class Parser
 
         predicate = advance
         if predicate.type != :KEYWORD || predicate.literal != 'from'
-            raise StandardError, "Expected keyword 'from' in 'select' statement"
+            raise SQLToMongo::Errors::ParserError.new(
+                "Expected keyword 'from' in 'select' statement",
+                predicate
+            )
         end
 
         object_name = identifier
@@ -154,7 +144,7 @@ class Parser
         predicate = advance
 
         if predicate.type != :KEYWORD || predicate.literal != 'into'
-            raise StandardError, "Expected keyword 'into' in 'insert' statement"
+            raise SQLToMongo::Errors::StatementError, "Expected keyword 'into' in 'insert' statement"
         end
 
         object_name = identifier
@@ -174,10 +164,10 @@ class Parser
         advance
 
         if assignments.length == 0
-            raise StandardError, "Expected column names for query since MongoDB is schemaless"
+            raise SQLToMongo::Errors::StatementError, "Expected column names for query since MongoDB is schemaless"
         end
         if previous.literal != 'values'
-            raise StandardError, "Expected insert statement to have values"
+            raise SQLToMongo::Errors::StatementError, "Expected insert statement to have values"
         end
     
         values = []
@@ -193,7 +183,7 @@ class Parser
         end
 
         unless assignments.length == values.length
-            raise StandardError, "Expected equal number of values and assignment pairs"
+            raise SQLToMongo::Errors::StatementError, "Expected equal number of values and assignment column pairs"
         end
     
         consume(:SEMICOLON, "Expected ';' at the end of statement")
@@ -207,7 +197,7 @@ class Parser
         predicate = advance
 
         if predicate.type != :KEYWORD || predicate.literal != 'set'
-            raise StandardError, "Expected keyword 'set' in 'update' statement"
+            raise SQLToMongo::Errors::StatementError, "Expected keyword 'set' in 'update' statement"
         end
         assignments = {}
 
@@ -231,7 +221,7 @@ class Parser
         command = previous
         predicate = advance
         if predicate.type != :KEYWORD || predicate.literal != 'from'
-            raise StandardError, "Expected keyword 'from' after delete statement"
+            raise SQLToMongo::Errors::StatementError, "Expected keyword 'from' after delete statement"
         end
         object_name = identifier
         conditions = condition
@@ -264,25 +254,15 @@ class Parser
     end
 
     def logic_and
-        expr = logical_not
+        expr = equality
 
         while string_match("and")
             operator = previous
-            right = logical_not
+            right = equality
             expr = Logical.new(expr, operator, right)
         end
         return expr
     end
-
-    def logical_not
-        while string_match("not")
-            operator = previous
-            right = logical_not
-            return Logical.new(nil, operator, right)
-        end
-        return equality
-    end
-
 
     def equality
         expr = comparison
@@ -395,7 +375,7 @@ class Parser
 
     def consume(type, message)
         return advance if check(type)
-        raise StandardError, message + " but got #{previous&.literal || previous&.value || previous&.lexeme}"
+        raise SQLToMongo::Errors::StatementError, message + " but got #{previous&.literal || previous&.value || previous&.lexeme}"
     end
   
     def advance

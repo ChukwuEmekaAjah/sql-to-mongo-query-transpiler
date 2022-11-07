@@ -3,7 +3,8 @@ require_relative './parser'
 require_relative './interpreter'
 
 class Transpiler
-    attr_accessor :statement, :parsed_statement, :tokens, :interpreter
+    attr_accessor :statement
+    attr_reader :parsed_statement, :tokens, :interpreter
 
     def initialize(statement)
         @statement = statement
@@ -42,7 +43,7 @@ end
 # puts p2.print
 # puts p.print
 
-t = Transpiler.new("select name as lname, age as number from Customers where Country='Mexico';")
+t = Transpiler.new("select name , age from users where not (name>='Ajah' and (age > 29 and age < 30000003));")
 p = t.parse.transpile
 puts "SQL Query is: \"#{t.statement}\""
 puts "MongoDB equivalent query is: '#{p}'"
