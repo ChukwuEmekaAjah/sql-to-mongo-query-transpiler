@@ -26,3 +26,9 @@ puts p.print
 # puts "SQL Query is: \"#{t.statement}\""
 # puts "MongoDB equivalent query is: '#{p}'"
 ```
+
+## Quirks
+This parser doesn't yet understand SQL-like regular expressions. You are encouraged to put the equivalent JavaScript/MongoDB regular expression string in your statement and it will function normally.
+For example:
+Actual SQL Query: `select name, age as number from users where firstname in ('cute', 'ajah') and lname like 'name%' ;`
+Write the following query:  `select name, age as number from users where firstname in ('cute', 'ajah') and lname like '^name.*' ;`
