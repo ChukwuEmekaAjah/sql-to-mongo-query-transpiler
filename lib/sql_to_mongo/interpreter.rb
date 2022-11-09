@@ -3,7 +3,10 @@ require_relative './expr'
 
 module SQLToMongo
     class Interpreter
-        
+        FUNCTIONS = {
+            "in" => "$in",
+            "like" => "$regex",
+        }
         VISITORS = {
             "ExplainDML" => :visitExplainDML,
             "SelectDML" => :visitSelectDML,
@@ -17,7 +20,22 @@ module SQLToMongo
             "Field" => :visitFieldExpr,
             "Logical" => :visitLogicalExpr,
             "ProjectedField" => :visitProjectedFieldExpr,
+            "Arguments" => :visitArgumentsExpr,
+            "Function" => :visitFunctionExpr,
         }
+
+        def visitFunctionExpr(expr)
+            column_name = execute(expr.column_name)
+            arguments = execute(expr.arguments)
+            return {column_name => {FUNCTIONS[expr.function.literal] => arguments}}
+        end
+
+        def visitArgumentsExpr(expr)
+            arguments = expr.arguments.map do |arg|
+                execute(arg)
+            end
+            return arguments
+        end
 
         def visitLogicalExpr(expr)
             left = execute(expr.left)

@@ -255,12 +255,23 @@ module SQLToMongo
         end
 
         def logic_and
-            expr = equality
+            expr = function
 
             while string_match("and")
                 operator = previous
-                right = equality
+                right = function
                 expr = Logical.new(expr, operator, right)
+            end
+            return expr
+        end
+
+        def function
+            expr = equality
+
+            while string_match("in", "like")
+                operator = previous
+                right = equality
+                expr = Function.new(expr, operator, right)
             end
             return expr
         end
@@ -331,8 +342,17 @@ module SQLToMongo
     
             if match(:LEFT_PAREN)
                 expr = expression
+
+                if !peek.type == :COMMA
+                    consume(:RIGHT_PAREN, "Expect ')' after expression.")
+                    return Grouping.new(expr)
+                end
+                arguments = [expr]
+                while match(:COMMA)
+                    arguments << expression
+                end
                 consume(:RIGHT_PAREN, "Expect ')' after expression.")
-                return Grouping.new(expr)
+                return Arguments.new(arguments)
             end
         end
 

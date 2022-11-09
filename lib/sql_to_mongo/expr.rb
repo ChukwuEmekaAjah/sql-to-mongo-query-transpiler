@@ -153,3 +153,20 @@ class ProjectedField < Expr
         @alias_name = alias_name
     end
 end
+
+class Arguments < Expr
+    attr_reader :arguments
+
+    def initialize(arguments)
+        @arguments = arguments
+    end
+end
+
+class Function < Expr
+    attr_reader :column_name, :function, :arguments
+    def initialize(column_name, function, arguments)
+        @column_name = column_name
+        @function = function
+        @arguments = arguments
+    end
+end
