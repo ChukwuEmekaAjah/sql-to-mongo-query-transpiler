@@ -30,4 +30,3 @@ module SQLToMongo
 
     end
 end
-

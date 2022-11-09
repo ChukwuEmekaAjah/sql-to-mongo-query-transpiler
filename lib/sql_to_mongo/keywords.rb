@@ -40,5 +40,6 @@ module Keywords
         AND: 'AND',
         ALTER: 'ALTER',
         INTO: 'INTO',
+        IN: 'IN',
     }
 end
