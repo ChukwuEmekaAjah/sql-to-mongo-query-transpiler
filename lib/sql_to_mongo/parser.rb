@@ -267,11 +267,18 @@ module SQLToMongo
 
         def function
             expr = equality
-
-            while string_match("in", "like")
-                operator = previous
-                right = equality
-                expr = Function.new(expr, operator, right)
+            if peek.literal == "between"
+                while string_match( "between")
+                    operator = previous
+                    right = expression
+                    expr = Function.new(expr, operator, right)
+                end
+            else
+                while string_match("in", "like")
+                    operator = previous
+                    right = equality
+                    expr = Function.new(expr, operator, right)
+                end
             end
             return expr
         end

@@ -6,6 +6,7 @@ module SQLToMongo
         FUNCTIONS = {
             "in" => "$in",
             "like" => "$regex",
+            "between" => "$between"
         }
         VISITORS = {
             "ExplainDML" => :visitExplainDML,
@@ -220,7 +221,6 @@ module SQLToMongo
                 return {left => {'$ne' => right}}
             when :EQUAL
                 return {left => right}
-            when 'and'
             end
 
             return nil

@@ -18,6 +18,10 @@ p2 = SQLToMongo::Transpiler.new("explain select name, age from Customers where C
 t = SQLToMongo::Transpiler.new("select name as lname, age from Customers where Country='Mexico';")
 
 puts p2.print
+t = SQLToMongo::Transpiler.new("select name, age as number from users where age in (23, 43) or firstname between 2 and 3 ;")
+p = t.parse.transpile
+puts "SQL Query is: \"#{t.statement}\""
+puts "MongoDB equivalent query is: '#{p}'"
 puts p.print
 
 
