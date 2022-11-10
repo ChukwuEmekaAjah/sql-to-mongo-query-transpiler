@@ -1,13 +1,10 @@
 require 'json'
 require_relative './expr'
+require_relative './utils/function_converters'
 
 module SQLToMongo
     class Interpreter
-        FUNCTIONS = {
-            "in" => "$in",
-            "like" => "$regex",
-            "between" => "$between"
-        }
+
         VISITORS = {
             "ExplainDML" => :visitExplainDML,
             "SelectDML" => :visitSelectDML,
@@ -28,7 +25,7 @@ module SQLToMongo
         def visitFunctionExpr(expr)
             column_name = execute(expr.column_name)
             arguments = execute(expr.arguments)
-            return {column_name => {FUNCTIONS[expr.function.literal] => arguments}}
+            return {column_name => SQLToMongo::Utils::FunctionConverters.send(expr.function.literal.to_sym, arguments)}
         end
 
         def visitArgumentsExpr(expr)
@@ -42,7 +39,7 @@ module SQLToMongo
             left = execute(expr.left)
             right = execute(expr.right)
 
-            return {"$#{expr.operator.literal}": [left, right].compact}
+            return {"$#{expr.operator.literal}" => [left, right].compact}
         end
 
         def visitProjectedFieldExpr(expr)
