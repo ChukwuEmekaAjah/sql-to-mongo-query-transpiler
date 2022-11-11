@@ -8,5 +8,5 @@ Gem::Specification.new do |s|
     s.files       = Dir.glob(["lib/**/*.rb", "*.md", "bin/*"])
     s.homepage    = "https://github.com/ChukwuEmekaAjah/sql-to-mongo-query-transpiler"
     s.license     = "MIT"
-    s.executables = ["sql_to_mongo"]
+    s.executables = []
 end

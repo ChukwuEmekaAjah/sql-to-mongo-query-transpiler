@@ -5,9 +5,11 @@ Bearing in mind that MongoDB is schemaless, some of the shorthand queries of SQL
 
 # Installation
 To install the package, just run:
+
 `gem install sql_to_mongo`
 
 If you intend to build it from source after cloning this repository, run:
+
 `gem build sql_to_mongo.gemspec`
 
 ## Requirements
