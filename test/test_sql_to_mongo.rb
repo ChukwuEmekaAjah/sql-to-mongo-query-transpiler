@@ -30,9 +30,9 @@ class SQLToMongo::TranspilerTest < Minitest::Test
         assert expected_mongodb_query == mongodb_query
     end
 
-    def test_transpile_returns_aggregate_query_for_renamed_sql_columns
-        sql_query = 'select name as fname, age from Customers where Country=\'Mexico\';'
-        expected_mongodb_query = 'db.Customers.aggregate([{"$match":{"Country":"Mexico"}},{"$project":{"fname":"$name","age":1}}])'
+    def test_transpile_returns_mongodb_query_explain_expression
+        sql_query = 'explain select name, age from Customers where Country=\'Mexico\';'
+        expected_mongodb_query = 'db.Customers.find({"Country":"Mexico"}, {"name":1,"age":1}).explain()'
         mongodb_query = SQLToMongo::Transpiler.new(sql_query).parse.transpile
         assert expected_mongodb_query == mongodb_query
     end

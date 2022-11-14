@@ -23,22 +23,12 @@ module SQLToMongo
         def statement
             return explain_statement if string_match('explain')
             return data_manipulation_statement if string_match(*DML_KEYWORDS.keys.map {|key| key.downcase})
-            return data_definition_statement
         end
 
         def explain_statement
             advance
             dml_statement = data_manipulation_statement
             return ExplainDML.new(dml_statement)
-        end
-
-        def data_definition_statement
-            command = advance
-            object = advance
-            object_name = identifier
-
-            consume(:SEMICOLON, "Expected ';' at the end of statement")
-            return DDL.new(command, object, object_name)
         end
 
         def data_manipulation_statement
@@ -85,47 +75,50 @@ module SQLToMongo
             object_name = identifier
 
             conditions = condition
+            aggregators = soft_filters
             consume(:SEMICOLON, "Expected ';' at the end of statement")
             return SelectDML.new(command, object_name, selected_fields, conditions)
         end
 
         def soft_filters
             filters = {}
-            if peek.literal == 'limit'
-                advance
-                filters['limit'] = expression
-            end
+            while peek.type == :KEYWORD
+                if peek.literal == 'limit'
+                    advance
+                    filters['limit'] = expression
+                end
 
-            if peek.literal == 'offset'
-                advance
-                filters['offset'] = expression
-            end
+                if peek.literal == 'offset'
+                    advance
+                    filters['offset'] = expression
+                end
 
-            if peek.literal == 'order' && peek(1).literal == 'by'
-                advance && advance
-                filters['order_by'] = ordering
-            end
+                if peek.literal == 'order' && peek(1).literal == 'by'
+                    advance && advance
+                    filters['order_by'] = ordering
+                end
 
-            if peek.literal == 'group' && peek(1).literal == 'by'
-                advance && advance
-                filters['group_by'] = grouping
-            end
+                if peek.literal == 'group' && peek(1).literal == 'by'
+                    advance && advance
+                    filters['group_by'] = grouping
+                end
 
-            if peek.literal == 'having'
-                filter['having'] = condition('having')
+                if peek.literal == 'having'
+                    filters['having'] = condition('having')
+                end
             end
-
+            return filters
         end
 
         def ordering(order_hash = {})
-            field = identifier
-            value = string_match('asc', 'desc') && previous
-
-            order_hash[field.literal] = value
-            if field && value
-                ordering(order_hash)
+            while match(:PARAM, :IDENTIFIER)
+                field = previous
+                value = string_match('asc', 'desc') && previous
+                order_hash[field.literal] = value
+                if peek.literal != ';' && peek.type != :KEYWORD
+                    consume(:COMMA, "Expected ',' after each value in group by clause") unless is_at_end?
+                end
             end
-
             return order_hash
         end
 
@@ -133,8 +126,8 @@ module SQLToMongo
             fields = []
             while match(:PARAM, :IDENTIFIER)
                 fields << previous
-                if peek.literal != ';' || peek.type == :KEYWORD
-                    consume(:COMMA, "Expected ',' after each value in insert statement") unless is_at_end?
+                if peek.literal != ';' && peek.type != :KEYWORD
+                    consume(:COMMA, "Expected ',' after each value in group by clause") unless is_at_end?
                 end
             end
             return fields

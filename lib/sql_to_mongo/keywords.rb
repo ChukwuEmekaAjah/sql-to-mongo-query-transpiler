@@ -41,5 +41,6 @@ module Keywords
         ALTER: 'ALTER',
         INTO: 'INTO',
         IN: 'IN',
+        HAVING: 'HAVING',
     }
 end

@@ -57,6 +57,33 @@ puts "SQL Query is: \"#{t.statement}\""
 puts "MongoDB equivalent query is: '#{p}'"
 ```
 
+# API
+The transpiler API has a small methods space. It only has 3 methods that are of practical use.
+
+- `.parse`
+Parses an SQL query string into an expression that can be converted into a MongoDB query. It returns `self` after it's called so as to enable method chaining on the object. It can be used as shown below:
+
+```
+basic_select = SQLToMongo::Transpiler.new("select name, age from Customers;").parse
+```
+
+- `.rescan`
+It converts an SQL query string into tokens that can be parsed into a MongoDB query. It is used in situations where the sql query string is updated for a transpiler session and we need to parse it again. An example usage can be shown below:
+
+```ruby
+basic_select = SQLToMongo::Transpiler.new("select name, age from Customers;").parse
+basic_select.statement = "select name as fname, age from Customers where age >= 18;"
+basic_select.rescan
+
+```
+
+- `.transpile`
+This is an instance method that converts parsed SQL query strings to their equivalent MongoDB query string. It can be used as shown below:
+```ruby
+basic_select = SQLToMongo::Transpiler.new("select name, age from Customers;").parse.transpile
+puts "MongoDB query #{basic_select}"
+```
+
 # TODO
 - Support use of SQL dialects
 - Support more SQL functions
