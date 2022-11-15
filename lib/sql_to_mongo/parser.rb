@@ -74,13 +74,19 @@ module SQLToMongo
 
             object_name = identifier
 
-            conditions = condition
-            aggregators = soft_filters
+            clause = clauses
             consume(:SEMICOLON, "Expected ';' at the end of statement")
-            return SelectDML.new(command, object_name, selected_fields, conditions)
+            return SelectDML.new(command, object_name, selected_fields, clause)
         end
 
-        def soft_filters
+        def clauses
+            container = {
+                "where" => condition,
+                **aggregators
+            }
+        end
+
+        def aggregators
             filters = {}
             while peek.type == :KEYWORD
                 if peek.literal == 'limit'

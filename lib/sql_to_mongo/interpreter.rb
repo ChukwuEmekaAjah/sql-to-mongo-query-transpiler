@@ -61,8 +61,9 @@ module SQLToMongo
             query += collection
 
             conditions = {}
-            if dml.conditions
-                conditions.merge!(execute(dml.conditions))
+            if dml.clauses && dml.clauses.has_key?("where")
+                result = execute(dml.clauses["where"])
+                conditions.merge!(result) unless result.nil?
             end
 
             selected_fields = {}
@@ -76,19 +77,78 @@ module SQLToMongo
                 selected_fields.merge!({field.literal => 1 })
             end
 
+            query_type = '.aggregate' if dml.clauses.has_key?("group_by")
             if query_type == '.aggregate'
-                aggregate_body = [
-                    {
+                aggregate_body = []
+
+                unless conditions.nil?
+                    aggregate_body << {
                         "$match": conditions
-                    },
-                    {
+                    }
+                end
+
+                unless selected_fields.nil?
+                    aggregate_body << {
                         "$project": selected_fields
                     }
-                ]
+                end
+
+                if dml.clauses
+                    if dml.clauses.has_key?("order_by")
+                        aggregate_body << {
+                            "$sort" => dml.clauses["order_by"].map { |k,v| [k, v.literal == 'asc' ? 1 : -1] }.to_h
+                        }
+                    end
+
+                    if dml.clauses.has_key?("offset")
+                        aggregate_body << {
+                            "$skip" => execute(dml.clauses["offset"]).to_i
+                        }
+                    end
+
+                    if dml.clauses.has_key?("limit")
+                        aggregate_body << {
+                            "$limit" => execute(dml.clauses["limit"]).to_i
+                        }
+                    end
+
+                    if dml.clauses.has_key?("group_by")
+                        aggregate_body << {
+                            "$group" => {
+                                "_id" => dml.clauses["group_by"].map { |k| [k.literal, "$#{k.literal}"]}.to_h
+                            }
+                        }
+                    end
+
+                    if dml.clauses.has_key?("having")
+                        aggregate_body << {
+                            "$match" => execute(dml.clauses["having"])
+                        }
+                    end
+                    
+                end
+
                 query += "#{query_type}(#{JSON.generate(aggregate_body)})"
                 return query
             end
             query += "#{query_type}(#{JSON.generate(conditions)}, #{JSON.generate(selected_fields)})"
+
+            if dml.clauses
+                if dml.clauses.has_key?("order_by")
+                    order_fields = dml.clauses["order_by"].map { |k,v| [k, v.literal == 'asc' ? 1 : -1] }.to_h
+                    query += ".sort(#{JSON.generate(order_fields)})"
+                end
+
+                if dml.clauses.has_key?("offset")
+                    query += ".skip(#{execute(dml.clauses["offset"]).to_i})"
+                end
+
+                if dml.clauses.has_key?("limit")
+                    query += ".limit(#{execute(dml.clauses["limit"]).to_i})"
+                end
+            end
+
+            return query
         end
 
         def visitUpdateDML(dml)

@@ -65,11 +65,11 @@ class UpdateDML < DML
 end
 
 class SelectDML < DML
-    attr_reader :command, :object_name, :conditions, :selected_fields
-    def initialize(command, object_name, selected_fields, conditions)
+    attr_reader :command, :object_name, :clauses, :selected_fields
+    def initialize(command, object_name, selected_fields, clauses)
         @command = command
         @object_name = object_name
-        @conditions = conditions
+        @clauses = clauses
         @selected_fields = selected_fields
     end
 end

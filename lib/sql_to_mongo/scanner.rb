@@ -131,7 +131,7 @@ module SQLToMongo
             
             identifier = @source[@start...@current]
             if Keywords::KEYWORDS[identifier.upcase.to_sym]
-                @tokens << Token.new(identifier, :KEYWORD, identifier, @start)
+                @tokens << Token.new(identifier.downcase, :KEYWORD, identifier.downcase, @start)
                 return
             end
             @tokens << Token.new(identifier, :IDENTIFIER, identifier, @start)
