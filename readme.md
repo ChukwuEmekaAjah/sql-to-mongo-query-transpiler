@@ -87,8 +87,6 @@ puts "MongoDB query #{basic_select}"
 # TODO
 - Support use of SQL dialects
 - Support more SQL functions
-- Integrate code for aggregator commands like `group by, count, order by, etc`
-- Support Data Definition Language (DDL) queries
 
 ## Quirks
 - This parser doesn't yet understand SQL-like regular expressions. You are encouraged to put the equivalent JavaScript/MongoDB regular expression string in your statement and it will function normally.

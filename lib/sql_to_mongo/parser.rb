@@ -50,11 +50,11 @@ module SQLToMongo
             if peek.literal == '*'
                 advance
             else
-                while match(:PARAM, :IDENTIFIER)
-                    selected_field = previous
+                while peek.literal != 'from'
+                    selected_field = expression
 
                     if peek.literal == 'as' && ([:PARAM, :IDENTIFIER].include? peek(1).type)
-                        selected_field = ProjectedField.new(previous, peek(1))
+                        selected_field = ProjectedField.new(selected_field, peek(1))
                         1.upto(2) {|_| advance}
                     end
                     selected_fields << selected_field

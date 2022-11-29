@@ -43,7 +43,7 @@ module SQLToMongo
         end
 
         def visitProjectedFieldExpr(expr)
-            {expr.alias_name.literal => "$#{expr.original_name.literal}"}
+            {expr.alias_name.literal => "$#{expr.original_name.value}"}
         end
 
         def visitFieldExpr(expr)
@@ -74,7 +74,7 @@ module SQLToMongo
                     query_type = '.aggregate'
                     next
                 end
-                selected_fields.merge!({field.literal => 1 })
+                selected_fields.merge!({field.value => 1 })
             end
 
             query_type = '.aggregate' if dml.clauses.has_key?("group_by")
