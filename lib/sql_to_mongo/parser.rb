@@ -59,7 +59,7 @@ module SQLToMongo
                     end
                     selected_fields << selected_field
                     if peek.literal != 'from'
-                        consume(:COMMA, "Expected ',' after each value in insert statement") unless is_at_end?
+                        consume(:COMMA, "Expected ',' after each value in select statement") unless is_at_end?
                     end
                 end
             end
@@ -80,7 +80,7 @@ module SQLToMongo
         end
 
         def clauses
-            container = {
+            {
                 "where" => condition,
                 **aggregators
             }
@@ -273,7 +273,7 @@ module SQLToMongo
                     expr = Function.new(expr, operator, right)
                 end
             else
-                while string_match("in", "like")
+                while string_match("in", "like", "avg")
                     operator = previous
                     right = equality
                     expr = Function.new(expr, operator, right)

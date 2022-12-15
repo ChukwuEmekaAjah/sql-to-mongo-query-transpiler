@@ -42,5 +42,6 @@ module Keywords
         INTO: 'INTO',
         IN: 'IN',
         HAVING: 'HAVING',
+        AVG: 'AVG',
     }
 end

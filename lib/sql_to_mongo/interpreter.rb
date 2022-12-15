@@ -25,7 +25,7 @@ module SQLToMongo
         def visitFunctionExpr(expr)
             column_name = execute(expr.column_name)
             arguments = execute(expr.arguments)
-            return {column_name => SQLToMongo::Utils::FunctionConverters.send(expr.function.literal.to_sym, arguments)}
+            return SQLToMongo::Utils::FunctionConverters.send(expr.function.literal.to_sym, arguments, column_name)
         end
 
         def visitArgumentsExpr(expr)
@@ -43,7 +43,7 @@ module SQLToMongo
         end
 
         def visitProjectedFieldExpr(expr)
-            {expr.alias_name.literal => "$#{expr.original_name.value}"}
+            {expr.alias_name.literal => expr.original_name.is_a?(Expr) ? execute(expr.original_name) : "$#{expr.original_name.value}"}
         end
 
         def visitFieldExpr(expr)
@@ -244,28 +244,39 @@ module SQLToMongo
 
             case expr.operator.type
             when :MINUS
-                checkNumberOperand(expr.operator, right)
-                return left - right
+                if left.is_a?(Float) && right.is_a?(Float)
+                    return left - right
+                end
+                left = "$#{left}" if left.is_a?(String)
+                right = "$#{right}" if right.is_a?(String)
+
+                return {"$subtract" => [left, right]}
             when :SLASH
-                checkNumberOperands(expr.operator, left, right)
-                raise SQLToMongo::Errors::InterpreterError, "ZeroDivisionError for operator #{expr.operator}" if right.zero?
-                return Float(left)/Float(right)
+                if left.is_a?(Float) && right.is_a?(Float)
+                    raise SQLToMongo::Errors::InterpreterError, "ZeroDivisionError for operator #{expr.operator}" if right.zero?
+                    return Float(left) / Float(right)
+                end
+
+                left = "$#{left}" if left.is_a?(String)
+                right = "$#{right}" if right.is_a?(String)
+
+                return {"$divide" => [left, right]}
             when :STAR
-                checkNumberOperands(expr.operator, left, right)
-                return Float(left) * Float(right)
+                if left.is_a?(Float) && right.is_a?(Float)
+                    return Float(left) * Float(right)
+                end
+                left = "$#{left}" if left.is_a?(String)
+                right = "$#{right}" if right.is_a?(String)
+
+                return {"$multiply" => [left, right]}
             when :PLUS
                 if left.is_a?(Float) && right.is_a?(Float)
-                return left + right
+                    return left + right
                 end
+                left = "$#{left}" if left.is_a?(String)
+                right = "$#{right}" if right.is_a?(String)
 
-                if left.is_a?(String) && right.is_a?(String)
-                return left + right
-                end
-
-                if left.is_a?(String) || right.is_a?(String)
-                return left.to_s + right.to_s
-                end
-                raise SQLToMongo::Errors::InterpreterError, "Operands must be two numbers or two strings #{expr.operator}"
+                return {"$sum" => [left, right]}
             when :GREATER
                 return {left => {'$gt' => right}}
             when :GREATER_EQUAL
