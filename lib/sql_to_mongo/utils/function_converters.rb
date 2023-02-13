@@ -15,7 +15,7 @@ module SQLToMongo
                 return {column_name => {'$in' => arguments}}
             end
 
-            def like(argument, column_names)
+            def like(arguments, column_name)
                 return {column_name => {'$regex' => arguments}}
             end
 
